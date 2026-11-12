@@ -38,6 +38,7 @@
   const opening = $("#opening");
   const audio = $("#weddingAudio");
   audio.src = data.song.src;
+  audio.volume = 0.25;
   let soundWanted = true;
   let heroVideo = null;
   if (data.heroVideo) {
@@ -55,9 +56,31 @@
   }
   audio.addEventListener("play", reflectAudio); audio.addEventListener("pause", reflectAudio);
   audio.addEventListener("error", () => { set("#soundLabel", "Song not added"); $("#soundControl").setAttribute("aria-label", "Wedding song file not found"); });
+  let audioContext = null;
+  let audioGainReady = false;
   async function startMusic() {
     if (!soundWanted || !data.song.src) return;
-    try { await audio.play(); } catch { set("#soundLabel", "Play song"); }
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!audioGainReady && AudioContextClass) {
+        try {
+          audioContext = new AudioContextClass();
+          const source = audioContext.createMediaElementSource(audio);
+          const gain = audioContext.createGain();
+          gain.gain.value = 0.25;
+          source.connect(gain);
+          gain.connect(audioContext.destination);
+          audioGainReady = true;
+        } catch { audioContext = null; }
+      }
+      if (audioGainReady) {
+        audio.volume = 1;
+        if (audioContext.state === "suspended") await audioContext.resume();
+      } else {
+        audio.volume = 0.25;
+      }
+      await audio.play();
+    } catch { set("#soundLabel", "Play song"); }
   }
   $("#enterButton").addEventListener("click", () => {
     opening.classList.add("is-gone"); document.body.classList.add("entered");
