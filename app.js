@@ -1,4 +1,8 @@
 (() => {
+  // Fresh page loads begin at the invitation cover, not a restored section.
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+  if (location.hash) history.replaceState(null, "", `${location.pathname}${location.search}`);
+  window.scrollTo(0, 0);
   const data = window.wedding;
   const $ = (selector, root = document) => root.querySelector(selector);
   const set = (selector, value) => { const node = $(selector); if (node && value != null) node.textContent = value; };
